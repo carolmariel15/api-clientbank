@@ -81,7 +81,7 @@ public class ClienteController {
     public Mono<ResponseEntity<Client>> editarCliente(@RequestBody Client cliente, @PathVariable String id) {
         return service.findById(id).flatMap(c -> {
             c.setDirection(cliente.getDirection());
-            return service.save(c);
+              return service.save(c);
         }).map(c -> ResponseEntity.created(URI.create("/api/clientes/".concat(c.getId())))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(c))
@@ -96,9 +96,4 @@ public class ClienteController {
         }).defaultIfEmpty(new ResponseEntity<Void>(HttpStatus.NOT_FOUND));
     }
 	 
-	 
-	
-	
-	
-
 }

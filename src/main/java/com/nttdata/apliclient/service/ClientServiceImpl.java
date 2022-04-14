@@ -14,7 +14,7 @@ import reactor.core.publisher.Mono;
 public class ClientServiceImpl implements IClientService {
 
 	@Autowired
-	IClientDao ClientDao;
+	private IClientDao ClientDao;
 	
 	@Override
 	public Flux<Client> findAll() {
@@ -39,5 +39,7 @@ public class ClientServiceImpl implements IClientService {
 		// TODO Auto-generated method stub
 		return ClientDao.delete(client);
 	}
+	
+	
 
 }
