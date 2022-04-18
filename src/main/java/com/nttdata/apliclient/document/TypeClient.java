@@ -1,4 +1,4 @@
-package com.nttdata.apliclient.model;
+package com.nttdata.apliclient.document;
 
 import javax.validation.constraints.NotEmpty;
 

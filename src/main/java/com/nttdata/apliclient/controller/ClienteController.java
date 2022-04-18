@@ -4,6 +4,7 @@ package com.nttdata.apliclient.controller;
 import java.net.URI;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,21 +20,27 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.support.WebExchangeBindException;
-import com.nttdata.apliclient.model.Client;
+
+import com.nttdata.apliclient.document.Client;
 import com.nttdata.apliclient.service.IClientService;
+
+import models.Transaction;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 @RestController
-@RequestMapping("/api/cliente")
+@RequestMapping("/api/client")
 public class ClienteController {
 	
 	@Autowired
 	private IClientService service;
 	
+	private static final Logger LOGGER = LogManager.getLogger(ClienteController.class);
 
     @GetMapping
     public Mono<ResponseEntity<Flux<Client>>> listarCliente() {
+    	LOGGER.info("metodo listarCliente");
         return Mono.just(ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(service.findAll()));
@@ -95,5 +102,14 @@ public class ClienteController {
 
         }).defaultIfEmpty(new ResponseEntity<Void>(HttpStatus.NOT_FOUND));
     }
+    
+	@GetMapping("/trasaction/{codeClient}/{codeTransaction}")
+	public Mono<ResponseEntity<Flux<Transaction>>>  listTransactionClient(@PathVariable("codeClient") String codeClient,@PathVariable("codeTransaction") String codeTransaction) {
+		LOGGER.info("metodo listarTransactionCliente cliente "+codeClient);
+				
+		return  Mono.just(ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(
+				service.listTransactionClient(codeClient,codeTransaction))).defaultIfEmpty(ResponseEntity.notFound().build());
+		     }   
+    
 	 
 }

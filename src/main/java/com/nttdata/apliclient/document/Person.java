@@ -1,4 +1,4 @@
-package com.nttdata.apliclient.model;
+package com.nttdata.apliclient.document;
 
 import javax.validation.constraints.NotEmpty;
 
@@ -11,18 +11,20 @@ import lombok.Setter;
 @NoArgsConstructor*/
 public class Person {
 
-	private Integer code;
+	private String code;
 	private String firstName;
 	private String lastName;
 	private String direction;
 	private String phone;
 	private String email;
 
-	public Integer getCode() {
+
+
+	public String getCode() {
 		return code;
 	}
 
-	public void setCode(Integer code) {
+	public void setCode(String code) {
 		this.code = code;
 	}
 
