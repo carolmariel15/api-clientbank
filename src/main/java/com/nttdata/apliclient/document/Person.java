@@ -11,7 +11,7 @@ import lombok.Setter;
 @NoArgsConstructor
 public class Person {
 
-	private String code;
+	private String dni;
 	private String firstName;
 	private String lastName;
 	private String direction;

@@ -47,13 +47,43 @@ public class ClientController {
     }
 
     @GetMapping("/{id}")
-    public Mono<ResponseEntity<Client>> oneClient(@PathVariable String id) {
-    	LOGGER.info("metodo oneClient: muestra un cliente por id");
+    public Mono<ResponseEntity<Client>> findById(@PathVariable String id) {
+    	LOGGER.info("metodo findById: muestra un cliente por id");
         return service.findById(id).map(c -> ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(c))
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
+    
+
+    @GetMapping("/code/{code}")
+    public Mono<ResponseEntity<Client>> findByCode(@PathVariable String code) {
+    	LOGGER.info("metodo findByCode: muestra un cliente por codigo de cliente");
+        return service.findByCode(code).map(c -> ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(c))
+                .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+    
+    @GetMapping("/holders/{dni}")
+    public Mono<ResponseEntity<Client>> findByHoldersDni(@PathVariable String dni) {
+    	LOGGER.info("metodo findByHoldersDni: muestra un cliente por codigo de representante");
+        return service.findByHoldersDni(dni).map(c -> ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(c))
+                .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+    
+    @GetMapping("/crit/{dni}-{phone}")
+    public Mono<ResponseEntity<Client>> findByHoldersDniAndHoldersPhone(@PathVariable String dni,@PathVariable String phone) {
+    	LOGGER.info("metodo findByHoldersDniAndHoldersPhone: muestra un cliente mor dni y telefono representante");
+        return service.findByHoldersDniAndHoldersPhone(dni,phone).map(c -> ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(c))
+                .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+
 
     @PostMapping
    public Mono<ResponseEntity<Map<String, Object>>> saveClient(@Valid @RequestBody Mono<Client> monoClient) {

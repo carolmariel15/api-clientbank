@@ -24,6 +24,7 @@ public class Client extends Person {
 
 	@Id
 	private String id;
+	private String code;
 	private String corporation;
 	private TypeClient typeClient;
 	private List<Person> holders;

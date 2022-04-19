@@ -18,9 +18,18 @@ public interface IClientService {
 	//devuelve un solo elemento obsevable
 	public Mono<Client> findById(String id);
 	
+	//busca por codigo de cliente (DNI, RUC, otros)
+	public Mono<Client> findByCode(String code);
+	
+	public Mono<Client> findByHoldersDni(String dni);
+	
+	public Mono<Client> findByHoldersDniAndHoldersPhone(String dni,String phone);
+	
 	public Mono<Client> save(Client client);
 	
 	public Mono<Void> delete(Client client);
+	
+	
 	
 	public Flux<Transaction> listTransactionClient(String codeClient, String codeTransaction);
 		
