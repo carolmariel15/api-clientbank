@@ -31,23 +31,24 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 @RestController
 @RequestMapping("/api/client")
-public class ClienteController {
+public class ClientController {
 	
 	@Autowired
 	private IClientService service;
 	
-	private static final Logger LOGGER = LogManager.getLogger(ClienteController.class);
+	private static final Logger LOGGER = LogManager.getLogger(ClientController.class);
 
     @GetMapping
-    public Mono<ResponseEntity<Flux<Client>>> listarCliente() {
-    	LOGGER.info("metodo listarCliente");
+    public Mono<ResponseEntity<Flux<Client>>> listClient() {
+    	LOGGER.info("metodo listarCliente: lista todos los clientes");
         return Mono.just(ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(service.findAll()));
     }
 
     @GetMapping("/{id}")
-    public Mono<ResponseEntity<Client>> verDetallesCliente(@PathVariable String id) {
+    public Mono<ResponseEntity<Client>> oneClient(@PathVariable String id) {
+    	LOGGER.info("metodo oneClient: muestra un cliente por id");
         return service.findById(id).map(c -> ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(c))
@@ -55,20 +56,23 @@ public class ClienteController {
     }
 
     @PostMapping
-   public Mono<ResponseEntity<Map<String, Object>>> guardarCliente(@Valid @RequestBody Mono<Client> monoCliente) {
+   public Mono<ResponseEntity<Map<String, Object>>> saveClient(@Valid @RequestBody Mono<Client> monoClient) {
         Map<String, Object> respuesta = new HashMap<>();
+        LOGGER.info("metodo saveClient: guarda los datos del cliente y envia la respuesta exitosa, caso contrario se envia una respuesta erronia");
 
-        return monoCliente.flatMap(cliente -> {
-            return service.save(cliente).map(c-> {
+        return monoClient.flatMap(client -> {
+            return service.save(client).map(c-> {
                 respuesta.put("cliente", c);
                 respuesta.put("mensaje", "Cliente guardado con exito");
                 respuesta.put("timestamp", new Date());
 
-                return ResponseEntity.created(URI.create("/api/clientes/".concat(c.getId())))
+                return ResponseEntity.created(URI.create("/api/client/".concat(c.getId())))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(respuesta);
             });
         }).onErrorResume(t -> {
+        	
+        	LOGGER.error("Se ha produccido un error se envia");
             return Mono.just(t).cast(WebExchangeBindException.class)
                     .flatMap(e -> Mono.just(e.getFieldErrors()))
                     .flatMapMany(Flux:: fromIterable)
@@ -85,18 +89,21 @@ public class ClienteController {
     }
 
    @PutMapping("/{id}")
-    public Mono<ResponseEntity<Client>> editarCliente(@RequestBody Client cliente, @PathVariable String id) {
+    public Mono<ResponseEntity<Client>> editClient(@RequestBody Client client, @PathVariable String id) {
+	   LOGGER.info("metodo editClient: guarda los datos del cliente y envia la respuesta exitosa, caso contrario se envia una respuesta erronia");
         return service.findById(id).flatMap(c -> {
-            c.setDirection(cliente.getDirection());
+            c.setDirection(client.getDirection());
               return service.save(c);
-        }).map(c -> ResponseEntity.created(URI.create("/api/clientes/".concat(c.getId())))
+        }).map(c -> ResponseEntity.created(URI.create("/api/client/".concat(c.getId())))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(c))
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
-    public Mono<ResponseEntity<Void>> eliminarCliente(@PathVariable String id) {
+    public Mono<ResponseEntity<Void>> deleteClient(@PathVariable String id) {
+    	LOGGER.info("metodo deleteClient: elimina el cliente");
+    	
         return service.findById(id).flatMap(c -> {
             return service.delete(c).then(Mono.just(new ResponseEntity<Void>(HttpStatus.NO_CONTENT)));
 
@@ -105,7 +112,7 @@ public class ClienteController {
     
 	@GetMapping("/trasaction/{codeClient}/{codeTransaction}")
 	public Mono<ResponseEntity<Flux<Transaction>>>  listTransactionClient(@PathVariable("codeClient") String codeClient,@PathVariable("codeTransaction") String codeTransaction) {
-		LOGGER.info("metodo listarTransactionCliente cliente "+codeClient);
+		LOGGER.info("metodo listTransactionClient: metodo de comunicacion al servicio name api-transaction");
 				
 		return  Mono.just(ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(
 				service.listTransactionClient(codeClient,codeTransaction))).defaultIfEmpty(ResponseEntity.notFound().build());

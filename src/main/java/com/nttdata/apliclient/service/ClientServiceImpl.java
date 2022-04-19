@@ -1,11 +1,12 @@
 package com.nttdata.apliclient.service;
 
-
-import java.util.List;
-
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.nttdata.apliclient.controller.ClientController;
 import com.nttdata.apliclient.dao.IClientDao;
 import com.nttdata.apliclient.document.Client;
 import com.nttdata.apliclient.feignclients.TransactionFeignClient;
@@ -15,6 +16,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Service
+@Transactional
 public class ClientServiceImpl implements IClientService {
 
 	@Autowired
@@ -22,6 +24,8 @@ public class ClientServiceImpl implements IClientService {
 	
 	@Autowired
 	private TransactionFeignClient feignClient;
+	
+	private static final Logger LOGGER = LogManager.getLogger(ClientServiceImpl.class);
 	
 	@Override
 	public Flux<Client> findAll() {
@@ -47,14 +51,11 @@ public class ClientServiceImpl implements IClientService {
 		return ClientDao.delete(client);
 	}
 
-
+    //llamado de microservicio
 	@Override
 	public Flux<Transaction> listTransactionClient(String codeClient, String codeTransaction) {
-		// TODO Auto-generated method stub
-	   
-		//return feignClient.listTransactionClient(codeClient, codeTransaction);
-		
-	  return Flux.fromIterable(feignClient.listTransactionClient(codeClient, codeTransaction));
+        LOGGER.info("metod listTransactionClient : llamado al servicio de transation" );
+		return Flux.fromIterable(feignClient.listTransactionClient(codeClient, codeTransaction));
 	
 	}
 	
