@@ -1,4 +1,4 @@
-package models;
+package com.nttdata.apliclient.models;
 
 
 import java.time.LocalDateTime;

@@ -3,8 +3,8 @@ package com.nttdata.apliclient.service;
 import java.util.List;
 
 import com.nttdata.apliclient.document.Client;
+import com.nttdata.apliclient.models.Transaction;
 
-import models.Transaction;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -30,8 +30,8 @@ public interface IClientService {
 	public Mono<Void> delete(Client client);
 	
 	
-	
-	public Flux<Transaction> listTransactionClient(String codeClient, String codeTransaction);
+
+	public Flux<Transaction> listTransactionClientReact(String codeClient, String codeTransaction);
 		
 	
 

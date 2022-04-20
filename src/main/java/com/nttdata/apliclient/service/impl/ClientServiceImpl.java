@@ -1,16 +1,17 @@
-package com.nttdata.apliclient.service;
+package com.nttdata.apliclient.service.impl;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import com.nttdata.apliclient.dao.IClientDao;
 import com.nttdata.apliclient.document.Client;
-import com.nttdata.apliclient.feignclients.TransactionFeignClient;
+import com.nttdata.apliclient.models.Transaction;
+import com.nttdata.apliclient.service.IClientService;
 
-import models.Transaction;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -21,8 +22,7 @@ public class ClientServiceImpl implements IClientService {
 	@Autowired
 	private IClientDao clientDao;
 
-	@Autowired
-	private TransactionFeignClient feignClient;
+
 
 	private static final Logger LOGGER = LogManager.getLogger(ClientServiceImpl.class);
 
@@ -51,12 +51,6 @@ public class ClientServiceImpl implements IClientService {
 	}
 
 	// llamado de microservicio
-	@Override
-	public Flux<Transaction> listTransactionClient(String codeClient, String codeTransaction) {
-		LOGGER.info("metod listTransactionClient : llamado al servicio de transation");
-		return Flux.fromIterable(feignClient.listTransactionClient(codeClient, codeTransaction));
-
-	}
 
 	@Override
 	public Mono<Client> findByCode(String code) {
@@ -74,6 +68,16 @@ public class ClientServiceImpl implements IClientService {
 	public Mono<Client> findByHoldersDniAndHoldersPhone(String dni, String phone) {
 		// TODO Auto-generated method stub
 		return clientDao.findByHoldersDniAndHoldersPhone(dni, phone);
+	}
+
+	@Override
+	public Flux<Transaction> listTransactionClientReact(String codeClient, String codeTransaction) {
+		//WebClient client = WebClient.create("http://localhost:8085");
+		
+		//Flux<Transaction> flux =client.get().uri("/api/transaction/client/"+codeClient+"/"+codeTransaction).retrieve().bodyToFlux(Transaction.class);
+		
+		// TODO Auto-generated method stub
+		return WebClient.create("http://localhost:8085").get().uri("/api/transaction/client/"+codeClient+"/"+codeTransaction).retrieve().bodyToFlux(Transaction.class);
 	}
 
 }

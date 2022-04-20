@@ -1,4 +1,4 @@
-package models;
+package com.nttdata.apliclient.models;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

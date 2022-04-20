@@ -22,9 +22,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.support.WebExchangeBindException;
 
 import com.nttdata.apliclient.document.Client;
+import com.nttdata.apliclient.models.Transaction;
 import com.nttdata.apliclient.service.IClientService;
 
-import models.Transaction;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import org.apache.logging.log4j.LogManager;
@@ -145,7 +145,7 @@ public class ClientController {
 		LOGGER.info("metodo listTransactionClient: metodo de comunicacion al servicio name api-transaction");
 				
 		return  Mono.just(ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(
-				service.listTransactionClient(codeClient,codeTransaction))).defaultIfEmpty(ResponseEntity.notFound().build());
+				service.listTransactionClientReact(codeClient,codeTransaction))).defaultIfEmpty(ResponseEntity.notFound().build());
 		     }   
     
 	 
