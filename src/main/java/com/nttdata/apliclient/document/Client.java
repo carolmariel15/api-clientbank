@@ -5,6 +5,7 @@ import java.util.List;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
+import org.hibernate.validator.constraints.UniqueElements;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -24,8 +25,11 @@ public class Client extends Person {
 
 	@Id
 	private String id;
-	private String code;
+	private String codeClient;
+	private String ruc;
 	private String corporation;
+
+	
 	private TypeClient typeClient;
 	private List<Person> holders;
 	private List<Person> signatory;

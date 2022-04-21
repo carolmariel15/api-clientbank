@@ -24,6 +24,7 @@ import org.springframework.web.bind.support.WebExchangeBindException;
 import com.nttdata.apliclient.document.Client;
 import com.nttdata.apliclient.models.Transaction;
 import com.nttdata.apliclient.service.IClientService;
+import com.nttdata.apliclient.util.Constants;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -59,7 +60,7 @@ public class ClientController {
     @GetMapping("/code/{code}")
     public Mono<ResponseEntity<Client>> findByCode(@PathVariable String code) {
     	LOGGER.info("metodo findByCode: muestra un cliente por codigo de cliente");
-        return service.findByCode(code).map(c -> ResponseEntity.ok()
+        return service.findByCodeClient(code).map(c -> ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(c))
                 .defaultIfEmpty(ResponseEntity.notFound().build());
@@ -86,26 +87,33 @@ public class ClientController {
 
 
     @PostMapping
-   public Mono<ResponseEntity<Map<String, Object>>> saveClient(@Valid @RequestBody Mono<Client> monoClient) {
+   public Mono<ResponseEntity<Map<String, Object>>> save(@Valid @RequestBody Mono<Client> monoClient) {
         Map<String, Object> respuesta = new HashMap<>();
         LOGGER.info("metodo saveClient: guarda los datos del cliente y envia la respuesta exitosa, caso contrario se envia una respuesta erronia");
 
         return monoClient.flatMap(client -> {
+        	if (client.getTypeClient().getId()==Constants.TIPO_CLIENT_NATURAL) {
+        		client.setDni(client.getCodeClient());
+        	}else {
+        		client.setRuc(client.getCodeClient());
+        	}
+        		
             return service.save(client).map(c-> {
-                respuesta.put("cliente", c);
+                respuesta.put("Client", c);
                 respuesta.put("mensaje", "Cliente guardado con exito");
                 respuesta.put("timestamp", new Date());
 
                 return ResponseEntity.created(URI.create("/api/client/".concat(c.getId())))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(respuesta);
-            });
+            }).doOnSuccess(e->LOGGER.info("Todo OK"));
         }).onErrorResume(t -> {
         	
             return Mono.just(t).cast(WebExchangeBindException.class)
                     .flatMap(e -> Mono.just(e.getFieldErrors()))
                     .flatMapMany(Flux:: fromIterable)
                     .map(fieldError -> "El campo: " + fieldError.getField() + " " +fieldError.getDefaultMessage())
+                    .doOnError(e->LOGGER.error(e.getMessage()))
                     .collectList()
                     .flatMap(list -> {
                         respuesta.put("errors", list);

@@ -12,7 +12,7 @@ import lombok.Setter;
 @NoArgsConstructor
 public class TypeClient {
 	
-	private String typeClient;
+	private Integer id;
     
 	private String description;
 	

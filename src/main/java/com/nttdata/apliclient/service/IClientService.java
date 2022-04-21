@@ -17,7 +17,7 @@ public interface IClientService {
 	public Mono<Client> findById(String id);
 	
 	//busca por codigo de cliente (DNI, RUC, otros)
-	public Mono<Client> findByCode(String code);
+	public Mono<Client> findByCodeClient(String codeClient);
 	
 	public Mono<Client> findByHoldersDni(String dni);
 	

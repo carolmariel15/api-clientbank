@@ -53,9 +53,9 @@ public class ClientServiceImpl implements IClientService {
 	// llamado de microservicio
 
 	@Override
-	public Mono<Client> findByCode(String code) {
+	public Mono<Client> findByCodeClient(String codeClient) {
 		// TODO Auto-generated method stub
-		return clientDao.findByCode(code);
+		return clientDao.findByCodeClient(codeClient);
 	}
 
 	@Override

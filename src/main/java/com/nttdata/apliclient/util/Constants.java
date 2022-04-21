@@ -7,6 +7,7 @@ public interface Constants {
 
 	public static final String PATH_SERVICE_BANKACCOUNT = "http://localhost:8082";
 	public static final String PATH_SERVICE_BANKACCOUNT_URI = "/api/bankaccount";
+	public static final Integer TIPO_CLIENT_NATURAL =1;
 
 
 }
