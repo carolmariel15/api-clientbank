@@ -102,7 +102,6 @@ public class ClientController {
             });
         }).onErrorResume(t -> {
         	
-        	LOGGER.error("Se ha produccido un error se envia");
             return Mono.just(t).cast(WebExchangeBindException.class)
                     .flatMap(e -> Mono.just(e.getFieldErrors()))
                     .flatMapMany(Flux:: fromIterable)

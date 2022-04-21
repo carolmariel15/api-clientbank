@@ -1,7 +1,5 @@
 package com.nttdata.apliclient.service;
 
-import java.util.List;
-
 import com.nttdata.apliclient.document.Client;
 import com.nttdata.apliclient.models.Transaction;
 
