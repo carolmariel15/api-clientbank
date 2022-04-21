@@ -72,9 +72,7 @@ public class ClientServiceImpl implements IClientService {
 
 	@Override
 	public Flux<Transaction> listTransactionClientReact(String codeClient, String codeTransaction) {
-		//WebClient client = WebClient.create("http://localhost:8085");
-		
-		//Flux<Transaction> flux =client.get().uri("/api/transaction/client/"+codeClient+"/"+codeTransaction).retrieve().bodyToFlux(Transaction.class);
+
 		
 		// TODO Auto-generated method stub
 		return WebClient.create("http://localhost:8085").get().uri("/api/transaction/client/"+codeClient+"/"+codeTransaction).retrieve().bodyToFlux(Transaction.class);

@@ -4,7 +4,6 @@ package com.nttdata.apliclient.controller;
 import java.net.URI;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +39,7 @@ public class ClientController {
 	private static final Logger LOGGER = LogManager.getLogger(ClientController.class);
 
     @GetMapping
-    public Mono<ResponseEntity<Flux<Client>>> listClient() {
+    public Mono<ResponseEntity<Flux<Client>>> findAll() {
     	LOGGER.info("metodo listarCliente: lista todos los clientes");
         return Mono.just(ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
@@ -126,7 +125,7 @@ public class ClientController {
     }
 
    @PutMapping("/{id}")
-    public Mono<ResponseEntity<Client>> editClient(@RequestBody Client client, @PathVariable String id) {
+    public Mono<ResponseEntity<Client>> update(@RequestBody Client client, @PathVariable String id) {
 	   LOGGER.info("metodo editClient: guarda los datos del cliente y envia la respuesta exitosa, caso contrario se envia una respuesta erronia");
         return service.findById(id).flatMap(c -> {
             c.setDirection(client.getDirection());
@@ -138,7 +137,7 @@ public class ClientController {
     }
 
     @DeleteMapping("/{id}")
-    public Mono<ResponseEntity<Void>> deleteClient(@PathVariable String id) {
+    public Mono<ResponseEntity<Void>> delete(@PathVariable String id) {
     	LOGGER.info("metodo deleteClient: elimina el cliente");
     	
         return service.findById(id).flatMap(c -> {
