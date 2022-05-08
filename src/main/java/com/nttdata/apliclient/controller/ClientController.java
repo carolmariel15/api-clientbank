@@ -30,7 +30,7 @@ import reactor.core.publisher.Mono;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 @RestController
-@RequestMapping("/api/client")
+@RequestMapping("/client")
 public class ClientController {
 	
 	@Autowired
@@ -102,7 +102,7 @@ public class ClientController {
                 respuesta.put("mensaje", "Cliente guardado con exito");
                 respuesta.put("timestamp", new Date());
 
-                return ResponseEntity.created(URI.create("/api/client/".concat(c.getId())))
+                return ResponseEntity.created(URI.create("/client/".concat(c.getId())))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(respuesta);
             }).doOnSuccess(e->LOGGER.info("Todo OK"));
@@ -130,7 +130,7 @@ public class ClientController {
         return service.findById(id).flatMap(c -> {
             c.setDirection(client.getDirection());
               return service.save(c);
-        }).map(c -> ResponseEntity.created(URI.create("/api/client/".concat(c.getId())))
+        }).map(c -> ResponseEntity.created(URI.create("/client/".concat(c.getId())))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(c))
                 .defaultIfEmpty(ResponseEntity.notFound().build());
