@@ -3,9 +3,12 @@ package com.nttdata.apliclient.service.impl;
 import com.nttdata.apliclient.models.BankAccount;
 import com.nttdata.apliclient.models.Response;
 import com.nttdata.apliclient.util.Constants;
+import lombok.AllArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreaker;
+import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreakerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -19,11 +22,13 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Service
+@AllArgsConstructor
 @Transactional
 public class ClientServiceImpl implements IClientService {
 
-	@Autowired
-	private IClientDao clientDao;
+
+	private final IClientDao clientDao;
+	private final ReactiveCircuitBreakerFactory factory;
 
 	private static final Logger LOGGER = LogManager.getLogger(ClientServiceImpl.class);
 
@@ -77,7 +82,11 @@ public class ClientServiceImpl implements IClientService {
 				.get()
 				.uri(Constants.PATH_SERVICE_BANKACCOUNT_URI)
 				.retrieve()
-				.bodyToFlux(BankAccount.class);
+				.bodyToFlux(BankAccount.class)
+				.transformDeferred(it -> {
+					ReactiveCircuitBreaker rcb = factory.create("services");
+					return rcb.run(it, throwable -> Flux.just(new BankAccount()));
+				});
 	}
 
 	@Override
@@ -86,7 +95,11 @@ public class ClientServiceImpl implements IClientService {
 				.uri(Constants.PATH_SERVICE_BANKACCOUNT_URI)
 				.body(Mono.just(bankAccount), BankAccount.class)
 				.retrieve()
-				.bodyToMono(Response.class);
+				.bodyToMono(Response.class)
+				.transformDeferred(it -> {
+					ReactiveCircuitBreaker rcb = factory.create("services");
+					return rcb.run(it, throwable -> Mono.just(new Response()));
+				});
 	}
 
 	@Override
@@ -96,7 +109,11 @@ public class ClientServiceImpl implements IClientService {
 				.get()
 				.uri(Constants.PATH_SERVICE_TRANSACTION_URI+codeClient+"/"+codeTransaction)
 				.retrieve()
-				.bodyToFlux(Transaction.class);
+				.bodyToFlux(Transaction.class)
+				.transformDeferred(it -> {
+					ReactiveCircuitBreaker rcb = factory.create("services");
+					return rcb.run(it, throwable -> Flux.just(new Transaction()));
+				});
 	}
 
 	@Override
@@ -106,7 +123,11 @@ public class ClientServiceImpl implements IClientService {
 				.get()
 				.uri(Constants.PATH_SERVICE_TRANSACTION_URI)
 				.retrieve()
-				.bodyToFlux(Transaction.class);
+				.bodyToFlux(Transaction.class)
+				.transformDeferred(it -> {
+					ReactiveCircuitBreaker rcb = factory.create("services");
+					return rcb.run(it, throwable -> Flux.just(new Transaction()));
+				});
 	}
 
 	@Override
@@ -117,6 +138,10 @@ public class ClientServiceImpl implements IClientService {
 				.uri(Constants.PATH_SERVICE_TRANSACTION_URI)
 				.body(transaction,Transaction.class)
 				.retrieve()
-				.bodyToMono(Response.class );
+				.bodyToMono(Response.class )
+				.transformDeferred(it -> {
+					ReactiveCircuitBreaker rcb = factory.create("services");
+					return rcb.run(it, throwable -> Mono.just(new Response()));
+				});
 	}
 }

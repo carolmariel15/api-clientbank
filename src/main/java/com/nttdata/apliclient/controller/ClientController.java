@@ -9,6 +9,7 @@ import javax.validation.Valid;
 
 import com.nttdata.apliclient.models.BankAccount;
 import com.nttdata.apliclient.models.Response;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -32,12 +33,13 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 @RestController
+@AllArgsConstructor
 @RequestMapping("/client")
 public class ClientController {
-	
-	@Autowired
-	private IClientService service;
+
+	private final IClientService service;
 	
 	private static final Logger LOGGER = LogManager.getLogger(ClientController.class);
 
@@ -148,16 +150,41 @@ public class ClientController {
 
         }).defaultIfEmpty(new ResponseEntity<Void>(HttpStatus.NOT_FOUND));
     }
-    
-	@GetMapping("/trasaction/{codeClient}/{codeTransaction}")
+
+
+    /**
+     * Comunicacion con api-transaction
+     * @param codeClient
+     * @param codeTransaction
+     * @return
+     */
+	@GetMapping("/transaction/{codeClient}/{codeTransaction}")
 	public Mono<ResponseEntity<Flux<Transaction>>>  listTransactionClient(@PathVariable("codeClient") String codeClient,@PathVariable("codeTransaction") String codeTransaction) {
 		LOGGER.info("metodo listTransactionClient: metodo de comunicacion al servicio name api-transaction");
 				
 		return  Mono.just(ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(
 				service.listTransactionClientReact(codeClient,codeTransaction))).defaultIfEmpty(ResponseEntity.notFound().build());
-		     }
+    }
 
-    @GetMapping("/client")
+    @GetMapping("/transaction")
+    public Mono<ResponseEntity<Flux<Transaction>>> findAllTransaction() {
+        LOGGER.info("metodo listarTransaction");
+        return Mono.just(ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(service.findAllTransaction()));
+    }
+
+    @PostMapping("/transaction")
+    public Mono<ResponseEntity<Mono<Response>>>  saveTransaction(@Valid @RequestBody Mono<Transaction> monoTransaction) {
+
+        return  Mono.just(ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(
+                service.saveTransaction(monoTransaction))).defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Comunicacion con api-bankaccount
+     * @return
+     */
+    //@CircuitBreaker(name = "bankaccount", fallbackMethod = "fallBackGetBankaccount")
+    @GetMapping("/bankaccount")
     public Mono<ResponseEntity<Flux<BankAccount>>> findAllBankAccount(){
         LOGGER.info("metodo findAllClient: metodo de comunicacion al microservicio api-bankaccount");
 
@@ -166,7 +193,7 @@ public class ClientController {
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
-    @PostMapping("/client")
+    @PostMapping("/bankaccount")
     public Mono<ResponseEntity<Mono<Response>>> saveBankAccountClient(@RequestBody BankAccount bankAccount) {
         LOGGER.info("metodo saveBankAccountClient: metodo de comunicacion al microservicio api-bankaccount");
 
@@ -174,21 +201,5 @@ public class ClientController {
                         .body(service.saveBankAccount(bankAccount)))
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
-
-    @GetMapping
-    public Mono<ResponseEntity<Flux<Transaction>>> findAllTransaction() {
-        LOGGER.info("metodo listarTransaction");
-        return Mono.just(ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(service.findAllTransaction()));
-    }
-
-    @PostMapping
-    public Mono<ResponseEntity<Mono<Response>>>  saveTransaction(@Valid @RequestBody Mono<Transaction> monoTransaction) {
-
-        return  Mono.just(ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(
-                service.saveTransaction(monoTransaction))).defaultIfEmpty(ResponseEntity.notFound().build());
-
-
-    }
-
 	 
 }
