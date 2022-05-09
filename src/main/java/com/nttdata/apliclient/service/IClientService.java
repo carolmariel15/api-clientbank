@@ -1,6 +1,8 @@
 package com.nttdata.apliclient.service;
 
 import com.nttdata.apliclient.document.Client;
+import com.nttdata.apliclient.models.BankAccount;
+import com.nttdata.apliclient.models.Response;
 import com.nttdata.apliclient.models.Transaction;
 
 import reactor.core.publisher.Flux;
@@ -26,10 +28,14 @@ public interface IClientService {
 	public Mono<Client> save(Client client);
 	
 	public Mono<Void> delete(Client client);
-	
-	
+
+	public Flux<BankAccount> findAllBankAccount();
+	public Mono<Response> saveBankAccount(BankAccount bankAccount);
 
 	public Flux<Transaction> listTransactionClientReact(String codeClient, String codeTransaction);
+	public Flux<Transaction>  findAllTransaction();
+	public  Mono<Response> saveTransaction(Mono<Transaction> transaction);
+
 		
 	
 

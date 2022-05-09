@@ -1,5 +1,8 @@
 package com.nttdata.apliclient.service.impl;
 
+import com.nttdata.apliclient.models.BankAccount;
+import com.nttdata.apliclient.models.Response;
+import com.nttdata.apliclient.util.Constants;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,8 +24,6 @@ public class ClientServiceImpl implements IClientService {
 
 	@Autowired
 	private IClientDao clientDao;
-
-
 
 	private static final Logger LOGGER = LogManager.getLogger(ClientServiceImpl.class);
 
@@ -71,11 +72,51 @@ public class ClientServiceImpl implements IClientService {
 	}
 
 	@Override
-	public Flux<Transaction> listTransactionClientReact(String codeClient, String codeTransaction) {
-
-		
-		// TODO Auto-generated method stub
-		return WebClient.create("http://localhost:8085").get().uri("/api/transaction/client/"+codeClient+"/"+codeTransaction).retrieve().bodyToFlux(Transaction.class);
+	public Flux<BankAccount> findAllBankAccount() {
+		return WebClient.create(Constants.PATH_GATEWAY)
+				.get()
+				.uri(Constants.PATH_SERVICE_BANKACCOUNT_URI)
+				.retrieve()
+				.bodyToFlux(BankAccount.class);
 	}
 
+	@Override
+	public Mono<Response> saveBankAccount(BankAccount bankAccount) {
+		return WebClient.create(Constants.PATH_GATEWAY).post()
+				.uri(Constants.PATH_SERVICE_BANKACCOUNT_URI)
+				.body(Mono.just(bankAccount), BankAccount.class)
+				.retrieve()
+				.bodyToMono(Response.class);
+	}
+
+	@Override
+	public Flux<Transaction> listTransactionClientReact(String codeClient, String codeTransaction) {
+		// TODO Auto-generated method stub
+		return WebClient.create(Constants.PATH_GATEWAY)
+				.get()
+				.uri(Constants.PATH_SERVICE_TRANSACTION_URI+codeClient+"/"+codeTransaction)
+				.retrieve()
+				.bodyToFlux(Transaction.class);
+	}
+
+	@Override
+	public Flux<Transaction> findAllTransaction() {
+		// TODO Auto-generated method stub
+		return WebClient.create(Constants.PATH_GATEWAY)
+				.get()
+				.uri(Constants.PATH_SERVICE_TRANSACTION_URI)
+				.retrieve()
+				.bodyToFlux(Transaction.class);
+	}
+
+	@Override
+	public  Mono<Response> saveTransaction(Mono<Transaction> transaction) {
+		// TODO Auto-generated method stub
+		return WebClient.create(Constants.PATH_GATEWAY)
+				.post()
+				.uri(Constants.PATH_SERVICE_TRANSACTION_URI)
+				.body(transaction,Transaction.class)
+				.retrieve()
+				.bodyToMono(Response.class );
+	}
 }

@@ -6,6 +6,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import javax.validation.Valid;
+
+import com.nttdata.apliclient.models.BankAccount;
+import com.nttdata.apliclient.models.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -152,7 +155,40 @@ public class ClientController {
 				
 		return  Mono.just(ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(
 				service.listTransactionClientReact(codeClient,codeTransaction))).defaultIfEmpty(ResponseEntity.notFound().build());
-		     }   
-    
+		     }
+
+    @GetMapping("/client")
+    public Mono<ResponseEntity<Flux<BankAccount>>> findAllBankAccount(){
+        LOGGER.info("metodo findAllClient: metodo de comunicacion al microservicio api-bankaccount");
+
+        return Mono.just(ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
+                        .body(service.findAllBankAccount()))
+                .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/client")
+    public Mono<ResponseEntity<Mono<Response>>> saveBankAccountClient(@RequestBody BankAccount bankAccount) {
+        LOGGER.info("metodo saveBankAccountClient: metodo de comunicacion al microservicio api-bankaccount");
+
+        return  Mono.just(ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
+                        .body(service.saveBankAccount(bankAccount)))
+                .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping
+    public Mono<ResponseEntity<Flux<Transaction>>> findAllTransaction() {
+        LOGGER.info("metodo listarTransaction");
+        return Mono.just(ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(service.findAllTransaction()));
+    }
+
+    @PostMapping
+    public Mono<ResponseEntity<Mono<Response>>>  saveTransaction(@Valid @RequestBody Mono<Transaction> monoTransaction) {
+
+        return  Mono.just(ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(
+                service.saveTransaction(monoTransaction))).defaultIfEmpty(ResponseEntity.notFound().build());
+
+
+    }
+
 	 
 }
