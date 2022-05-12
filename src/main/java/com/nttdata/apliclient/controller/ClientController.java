@@ -1,45 +1,34 @@
 package com.nttdata.apliclient.controller;
 
 
-import java.net.URI;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import javax.validation.Valid;
-
-import com.nttdata.apliclient.models.BankAccount;
-import com.nttdata.apliclient.models.Response;
-import lombok.AllArgsConstructor;
+import com.nttdata.apliclient.document.Client;
+import com.nttdata.apliclient.models.*;
+import com.nttdata.apliclient.service.IClientService;
+import com.nttdata.apliclient.util.Constants;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.support.WebExchangeBindException;
-
-import com.nttdata.apliclient.document.Client;
-import com.nttdata.apliclient.models.Transaction;
-import com.nttdata.apliclient.service.IClientService;
-import com.nttdata.apliclient.util.Constants;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
+import javax.validation.Valid;
+import java.net.URI;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 @RestController
-@AllArgsConstructor
 @RequestMapping("/client")
 public class ClientController {
+	
+	@Autowired
+	private IClientService service;
 
-	private final IClientService service;
+	
 	
 	private static final Logger LOGGER = LogManager.getLogger(ClientController.class);
 
@@ -107,7 +96,7 @@ public class ClientController {
                 respuesta.put("mensaje", "Cliente guardado con exito");
                 respuesta.put("timestamp", new Date());
 
-                return ResponseEntity.created(URI.create("/client/".concat(c.getId())))
+                return ResponseEntity.created(URI.create("/api/client/".concat(c.getId())))
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(respuesta);
             }).doOnSuccess(e->LOGGER.info("Todo OK"));
@@ -135,7 +124,7 @@ public class ClientController {
         return service.findById(id).flatMap(c -> {
             c.setDirection(client.getDirection());
               return service.save(c);
-        }).map(c -> ResponseEntity.created(URI.create("/client/".concat(c.getId())))
+        }).map(c -> ResponseEntity.created(URI.create("/api/client/".concat(c.getId())))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(c))
                 .defaultIfEmpty(ResponseEntity.notFound().build());
@@ -150,56 +139,74 @@ public class ClientController {
 
         }).defaultIfEmpty(new ResponseEntity<Void>(HttpStatus.NOT_FOUND));
     }
-
-
-    /**
-     * Comunicacion con api-transaction
-     * @param codeClient
-     * @param codeTransaction
-     * @return
-     */
-	@GetMapping("/transaction/{codeClient}/{codeTransaction}")
+    
+	/*@GetMapping("/trasaction/{codeClient}/{codeTransaction}")
 	public Mono<ResponseEntity<Flux<Transaction>>>  listTransactionClient(@PathVariable("codeClient") String codeClient,@PathVariable("codeTransaction") String codeTransaction) {
 		LOGGER.info("metodo listTransactionClient: metodo de comunicacion al servicio name api-transaction");
 				
 		return  Mono.just(ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(
-				service.listTransactionClientReact(codeClient,codeTransaction))).defaultIfEmpty(ResponseEntity.notFound().build());
-    }
+				serviceTransaction.listTransactionClient(codeClient,codeTransaction))).defaultIfEmpty(ResponseEntity.notFound().build());
+		     }*/
+		
+	
+	/*@GetMapping("/trasaction/findAll")
+	public Mono<ResponseEntity<Mono<Transaction>>> findAllTransaction() {
+		LOGGER.info("metodo listarTransaction");
+		return Mono.just(ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(serviceTransaction.findAll()));
+	}*/
+	
+	/*@PostMapping("/trasaction")
+	public Mono<ResponseEntity<Mono<Response>>>  saveTransaction(@Valid @RequestBody Mono<Transaction> monoTransaction) {
+	
+		return  Mono.just(ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(
+				serviceTransaction.save(monoTransaction))).defaultIfEmpty(ResponseEntity.notFound().build());
 
-    @GetMapping("/transaction")
-    public Mono<ResponseEntity<Flux<Transaction>>> findAllTransaction() {
-        LOGGER.info("metodo listarTransaction");
-        return Mono.just(ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(service.findAllTransaction()));
-    }
+	}*/
 
-    @PostMapping("/transaction")
-    public Mono<ResponseEntity<Mono<Response>>>  saveTransaction(@Valid @RequestBody Mono<Transaction> monoTransaction) {
+
+    @GetMapping("/report/{codeClient}")
+    public Mono<ResponseEntity<Mono<ClientProducts>>>  listTransactionClient(@PathVariable("codeClient") String codeClient) {
+
 
         return  Mono.just(ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(
-                service.saveTransaction(monoTransaction))).defaultIfEmpty(ResponseEntity.notFound().build());
+                service.findByCodeClientProducts(codeClient))).defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
-    /**
-     * Comunicacion con api-bankaccount
-     * @return
-     */
-    //@CircuitBreaker(name = "bankaccount", fallbackMethod = "fallBackGetBankaccount")
-    @GetMapping("/bankaccount")
-    public Mono<ResponseEntity<Flux<BankAccount>>> findAllBankAccount(){
-        LOGGER.info("metodo findAllClient: metodo de comunicacion al microservicio api-bankaccount");
 
-        return Mono.just(ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
-                        .body(service.findAllBankAccount()))
+    @GetMapping("/report/{codeClient}/{typeAccount}/{period}")
+    public Mono<ResponseEntity<Mono<ClientReports>>>  findByReportGeneralClient(@PathVariable("codeClient") String codeClient,
+                                                                                @PathVariable("typeAccount") Integer typeAccount,
+                                                                                @PathVariable("period") String period
+    ){
+        LOGGER.info("metodo listTransactionClient: metodo de comunicacion al servicio name api-transaction");
+
+        return  Mono.just(ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(
+                service.findByReportGeneralClient(codeClient,typeAccount,period))).defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+
+    @PutMapping("/edit/{codeClient}/{accountNumber}")
+    public  Mono<ResponseEntity<BankAccount>> editCard(@RequestBody Card card, @PathVariable String codeClient, @PathVariable String accountNumber) {
+
+        //String codeClient, String accountNumber
+        return service
+                .editCard(card,codeClient,accountNumber)
+                .map(ba -> ResponseEntity.created(URI.create("/client/".concat(codeClient).concat("/").concat(accountNumber)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(ba))
                 .defaultIfEmpty(ResponseEntity.notFound().build());
+
     }
 
-    @PostMapping("/bankaccount")
-    public Mono<ResponseEntity<Mono<Response>>> saveBankAccountClient(@RequestBody BankAccount bankAccount) {
-        LOGGER.info("metodo saveBankAccountClient: metodo de comunicacion al microservicio api-bankaccount");
 
-        return  Mono.just(ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
-                        .body(service.saveBankAccount(bankAccount)))
-                .defaultIfEmpty(ResponseEntity.notFound().build());
+    @GetMapping("/transaction/report/{codeClient}/{typeAccount}/{numberCard}")
+    public Mono<ResponseEntity<Flux<Transaction>>> listTransactionClientReport(@PathVariable("codeClient") String codeClient,
+                                                                               @PathVariable("typeAccount") Integer typeAccount,
+                                                                               @PathVariable("numberCard") String numberCard
+    ) {
+        return Mono.just(ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(
+                service.reportTransactionLimit(codeClient, typeAccount,numberCard))).defaultIfEmpty(ResponseEntity.notFound().build());
     }
-	 
+
+
 }

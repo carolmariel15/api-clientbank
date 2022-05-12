@@ -1,20 +1,19 @@
-package com.nttdata.apliclient.document;
+package com.nttdata.apliclient.models;
+
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class TypeClient {
-	
-	private Integer id;
-    
-	private String description;
-	
+public class Account {
+	 private String numberAccount;
+	 private String name;
 
-	
+	 
+	 
+  
 
 }

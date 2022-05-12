@@ -1,9 +1,7 @@
 package com.nttdata.apliclient.dao;
 
+import com.nttdata.apliclient.document.Client;
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
-
-import com.nttdata.apliclient.document.*;
-
 import reactor.core.publisher.Mono;
 
 public interface IClientDao extends ReactiveMongoRepository<Client, String>{

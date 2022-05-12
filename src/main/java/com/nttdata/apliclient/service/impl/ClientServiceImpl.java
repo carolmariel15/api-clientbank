@@ -1,9 +1,10 @@
 package com.nttdata.apliclient.service.impl;
 
-import com.nttdata.apliclient.models.BankAccount;
-import com.nttdata.apliclient.models.Response;
+import com.nttdata.apliclient.dao.IClientDao;
+import com.nttdata.apliclient.document.Client;
+import com.nttdata.apliclient.models.*;
+import com.nttdata.apliclient.service.IClientService;
 import com.nttdata.apliclient.util.Constants;
-import lombok.AllArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,136 +13,247 @@ import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreakerFac
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
-
-import com.nttdata.apliclient.dao.IClientDao;
-import com.nttdata.apliclient.document.Client;
-import com.nttdata.apliclient.models.Transaction;
-import com.nttdata.apliclient.service.IClientService;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.stream.Collectors;
+
 @Service
-@AllArgsConstructor
 @Transactional
 public class ClientServiceImpl implements IClientService {
 
+    @Autowired
+    private IClientDao clientDao;
 
-	private final IClientDao clientDao;
-	private final ReactiveCircuitBreakerFactory factory;
+    @Autowired
+    private ReactiveCircuitBreakerFactory circuitBreakerFactory;
 
-	private static final Logger LOGGER = LogManager.getLogger(ClientServiceImpl.class);
+    private static final Logger LOGGER = LogManager.getLogger(ClientServiceImpl.class);
 
-	@Override
-	public Flux<Client> findAll() {
-		// TODO Auto-generated method stub
-		return clientDao.findAll();
-	}
+    @Override
+    public Flux<Client> findAll() {
+        // TODO Auto-generated method stub
+        return clientDao.findAll();
+    }
 
-	@Override
-	public Mono<Client> findById(String id) {
-		// TODO Auto-generated method stub
-		return clientDao.findById(id);
-	}
+    @Override
+    public Mono<Client> findById(String id) {
+        // TODO Auto-generated method stub
+        return clientDao.findById(id);
+    }
 
-	@Override
-	public Mono<Client> save(Client client) {
-		// TODO Auto-generated method stub
-		return clientDao.save(client);
-	}
+    @Override
+    public Mono<Client> save(Client client) {
+        // TODO Auto-generated method stub
+        return clientDao.save(client);
+    }
 
-	@Override
-	public Mono<Void> delete(Client client) {
-		// TODO Auto-generated method stub
-		return clientDao.delete(client);
-	}
+    @Override
+    public Mono<Void> delete(Client client) {
+        // TODO Auto-generated method stub
+        return clientDao.delete(client);
+    }
 
-	// llamado de microservicio
+    /**
+     * Permitir elaborar un resumen consolidado de un cliente
+     * con todos los productos que pueda tener en el banco.
+     *
+     * @param codeClient
+     * @return
+     */
+    @Override
+    public Mono<ClientProducts> findByCodeClientProducts(String codeClient) {
+        return WebClient.create(Constants.PATH_SERVICE_BANKACCOUNT)
+                .get().uri(Constants.PATH_SERVICE_BANKACCOUNT_URI.concat(Constants.PATH_CLIENT).concat("/").concat(codeClient))
+                .retrieve().bodyToFlux(BankAccount.class)
+                .transformDeferred(it -> {
+                    ReactiveCircuitBreaker rcb = circuitBreakerFactory.create("services");
+                    return rcb.run(it, throwable -> Flux.empty());
+                }).collectList().flatMap(listBankAccount -> {
 
-	@Override
-	public Mono<Client> findByCodeClient(String codeClient) {
-		// TODO Auto-generated method stub
-		return clientDao.findByCodeClient(codeClient);
-	}
+                            return WebClient.create(Constants.PATH_SERVICE_BANKCREDIT)
+                                    .get().uri(Constants.PATH_SERVICE_BANKCREDIT_URI.concat(Constants.PATH_CLIENT).concat("/").concat(codeClient))
+                                    .retrieve().bodyToFlux(BankCredit.class)
+                                    .transformDeferred(it -> {
+                                        ReactiveCircuitBreaker rcb = circuitBreakerFactory.create("services");
+                                        return rcb.run(it, throwable -> Flux.empty());
+                                    }).collectList().flatMap(listaBankCredit -> {
 
-	@Override
-	public Mono<Client> findByHoldersDni(String dni) {
-		// TODO Auto-generated method stub
-		return clientDao.findByHoldersDni(dni);
-	}
+                                                return WebClient.create(Constants.PATH_SERVICE_CREDIACCOUNT)
+                                                        .get().uri(Constants.PATH_SERVICE_CREDIACCOUNT_URI.concat(Constants.PATH_CLIENT).concat("/").concat(codeClient))
+                                                        .retrieve().bodyToFlux(CreditAccount.class)
+                                                        .transformDeferred(it -> {
+                                                            ReactiveCircuitBreaker rcb = circuitBreakerFactory.create("services");
+                                                            return rcb.run(it, throwable -> Flux.empty());
+                                                        }).collectList().flatMap(listaCreditAccount -> {
 
-	@Override
-	public Mono<Client> findByHoldersDniAndHoldersPhone(String dni, String phone) {
-		// TODO Auto-generated method stub
-		return clientDao.findByHoldersDniAndHoldersPhone(dni, phone);
-	}
+                                                            return Mono.just(new ClientProducts(listBankAccount, listaBankCredit, listaCreditAccount))
+                                                                    .switchIfEmpty(Mono.empty());
+                                                        });
+                                            }
+                                    );
+                        }
+                );
+    }
 
-	@Override
-	public Flux<BankAccount> findAllBankAccount() {
-		return WebClient.create(Constants.PATH_GATEWAY)
-				.get()
-				.uri(Constants.PATH_SERVICE_BANKACCOUNT_URI)
-				.retrieve()
-				.bodyToFlux(BankAccount.class)
-				.transformDeferred(it -> {
-					ReactiveCircuitBreaker rcb = factory.create("services");
-					return rcb.run(it, throwable -> Flux.just(new BankAccount()));
-				});
-	}
 
-	@Override
-	public Mono<Response> saveBankAccount(BankAccount bankAccount) {
-		return WebClient.create(Constants.PATH_GATEWAY).post()
-				.uri(Constants.PATH_SERVICE_BANKACCOUNT_URI)
-				.body(Mono.just(bankAccount), BankAccount.class)
-				.retrieve()
-				.bodyToMono(Response.class)
-				.transformDeferred(it -> {
-					ReactiveCircuitBreaker rcb = factory.create("services");
-					return rcb.run(it, throwable -> Mono.just(new Response()));
-				});
-	}
+    // llamado de microservicio
 
-	@Override
-	public Flux<Transaction> listTransactionClientReact(String codeClient, String codeTransaction) {
-		// TODO Auto-generated method stub
-		return WebClient.create(Constants.PATH_GATEWAY)
-				.get()
-				.uri(Constants.PATH_SERVICE_TRANSACTION_URI+codeClient+"/"+codeTransaction)
-				.retrieve()
-				.bodyToFlux(Transaction.class)
-				.transformDeferred(it -> {
-					ReactiveCircuitBreaker rcb = factory.create("services");
-					return rcb.run(it, throwable -> Flux.just(new Transaction()));
-				});
-	}
+    @Override
+    public Mono<Client> findByCodeClient(String codeClient) {
+        // TODO Auto-generated method stub
+        return clientDao.findByCodeClient(codeClient);
+    }
 
-	@Override
-	public Flux<Transaction> findAllTransaction() {
-		// TODO Auto-generated method stub
-		return WebClient.create(Constants.PATH_GATEWAY)
-				.get()
-				.uri(Constants.PATH_SERVICE_TRANSACTION_URI)
-				.retrieve()
-				.bodyToFlux(Transaction.class)
-				.transformDeferred(it -> {
-					ReactiveCircuitBreaker rcb = factory.create("services");
-					return rcb.run(it, throwable -> Flux.just(new Transaction()));
-				});
-	}
+    @Override
+    public Mono<Client> findByHoldersDni(String dni) {
+        // TODO Auto-generated method stub
+        return clientDao.findByHoldersDni(dni);
+    }
 
-	@Override
-	public  Mono<Response> saveTransaction(Mono<Transaction> transaction) {
-		// TODO Auto-generated method stub
-		return WebClient.create(Constants.PATH_GATEWAY)
-				.post()
-				.uri(Constants.PATH_SERVICE_TRANSACTION_URI)
-				.body(transaction,Transaction.class)
-				.retrieve()
-				.bodyToMono(Response.class )
-				.transformDeferred(it -> {
-					ReactiveCircuitBreaker rcb = factory.create("services");
-					return rcb.run(it, throwable -> Mono.just(new Response()));
-				});
-	}
+    @Override
+    public Mono<Client> findByHoldersDniAndHoldersPhone(String dni, String phone) {
+        // TODO Auto-generated method stub
+        return clientDao.findByHoldersDniAndHoldersPhone(dni, phone);
+    }
+
+
+    /**
+     * Generar un reporte completo y general por producto del banco en intervalo de tiempo especificado por el usuario
+     * @param codeClient
+     * @param typeAccount
+     * @return
+     */
+    @Override
+    public Mono<ClientReports> findByReportGeneralClient(String codeClient,Integer typeAccount,String period){
+
+        return clientDao.findByCodeClient(codeClient)
+                .flatMap(client -> {
+                    return WebClient.create(Constants.PATH_SERVICE_BANKACCOUNT)
+                            .get().uri(Constants.PATH_SERVICE_BANKACCOUNT_URI.concat(Constants.PATH_CLIENT).concat("/").concat(codeClient).concat("/").concat(typeAccount.toString()))
+                            .retrieve().bodyToFlux(BankAccount.class)
+                            .transformDeferred(it -> {
+                                ReactiveCircuitBreaker rcb = circuitBreakerFactory.create("services");
+                                return rcb.run(it, throwable -> Flux.empty());
+                            })
+                            .filter(f->((f.getMembershipDate().getYear()+1900)+String.format("%02d",(f.getMembershipDate().getMonth()+1))).equals(period))
+                            .collectList()
+                            .flatMap(bankAccount -> {
+                                        return WebClient.create(Constants.PATH_SERVICE_TRANSACTION)
+                                                .get().uri(Constants.PATH_SERVICE_TRANSACTION_URI.concat("/").concat(codeClient).concat("/").concat(typeAccount.toString()))
+                                                .retrieve().bodyToFlux(Transaction.class)
+                                                .transformDeferred(it -> {
+                                                    ReactiveCircuitBreaker rcb = circuitBreakerFactory.create("services");
+                                                    return rcb.run(it, throwable -> Flux.empty());
+                                                })
+                                                .collectList()
+                                                .flatMap(transactionAccount -> {
+                                                    bankAccount
+                                                            .stream()
+                                                            .forEach(p-> p.setListTransaction(transactionAccount
+                                                                    .stream()
+                                                                    .filter(t->p.getAccountNumber().equals(t.getNumberAccount()))
+                                                                    .collect(Collectors.toList())));
+
+
+                                                    return WebClient.create(Constants.PATH_SERVICE_BANKCREDIT)
+                                                            .get().uri(Constants.PATH_SERVICE_BANKCREDIT_URI.concat(Constants.PATH_CLIENT).concat("/").concat(codeClient).concat("/").concat(typeAccount.toString()))
+                                                            .retrieve().bodyToFlux(BankCredit.class)
+                                                            .transformDeferred(it -> {
+                                                                ReactiveCircuitBreaker rcb = circuitBreakerFactory.create("services");
+                                                                return rcb.run(it, throwable -> Flux.empty());
+                                                            })
+                                                            .filter(f->((f.getRequestDate().getYear()+1900)+String.format("%02d",(f.getRequestDate().getMonth()+1))).equals(period))
+                                                            .collectList()
+                                                            .flatMap(bankCredit -> {
+                                                                        return WebClient.create(Constants.PATH_SERVICE_TRANSACTION)
+                                                                                .get().uri(Constants.PATH_SERVICE_TRANSACTION_URI.concat("/").concat(codeClient).concat("/").concat(typeAccount.toString()))
+                                                                                .retrieve().bodyToFlux(Transaction.class)
+                                                                                .transformDeferred(it -> {
+                                                                                    ReactiveCircuitBreaker rcb = circuitBreakerFactory.create("services");
+                                                                                    return rcb.run(it, throwable -> Flux.empty());
+                                                                                })
+                                                                                .collectList()
+                                                                                .flatMap(transactionBankCredit -> {
+                                                                                    bankCredit
+                                                                                            .stream()
+                                                                                            .forEach(p-> p.setListTransaction(transactionBankCredit
+                                                                                                    .stream()
+                                                                                                    .filter(t->p.getTypeAccount().getId()==t.getIdTypeAccount())
+                                                                                                    .collect(Collectors.toList())));
+
+
+                                                                                    return WebClient.create(Constants.PATH_SERVICE_CREDIACCOUNT)
+                                                                                            .get().uri(Constants.PATH_SERVICE_CREDIACCOUNT_URI.concat(Constants.PATH_CLIENT).concat("/").concat(codeClient).concat("/").concat(typeAccount.toString()))
+                                                                                            .retrieve().bodyToFlux(CreditAccount.class)
+                                                                                            .transformDeferred(it -> {
+                                                                                                ReactiveCircuitBreaker rcb = circuitBreakerFactory.create("services");
+                                                                                                return rcb.run(it, throwable -> Flux.empty());
+                                                                                            })
+                                                                                            .filter(f->((f.getMembershipDate().getYear()+1900)+String.format("%02d",(f.getMembershipDate().getMonth()+1))).equals(period))
+                                                                                            .collectList()
+                                                                                            .flatMap(creditAccount -> {
+                                                                                                        return WebClient.create(Constants.PATH_SERVICE_TRANSACTION)
+                                                                                                                .get().uri(Constants.PATH_SERVICE_TRANSACTION_URI.concat("/").concat(codeClient).concat("/").concat(typeAccount.toString()))
+                                                                                                                .retrieve().bodyToFlux(Transaction.class)
+                                                                                                                .transformDeferred(it -> {
+                                                                                                                    ReactiveCircuitBreaker rcb = circuitBreakerFactory.create("services");
+                                                                                                                    return rcb.run(it, throwable -> Flux.empty());
+                                                                                                                })
+                                                                                                                .collectList()
+                                                                                                                .flatMap(transactionCreditAccount -> {
+                                                                                                                    creditAccount
+                                                                                                                            .stream()
+                                                                                                                            .forEach(p-> p.setListTransaction(transactionCreditAccount
+                                                                                                                                    .stream()
+                                                                                                                                    .filter(t->p.getAccountNumber().equals(t.getNumberAccount()))
+                                                                                                                                    .collect(Collectors.toList())));
+
+
+                                                                                                                    return  Mono.just(new ClientReports(client,new ClientProducts(bankAccount,bankCredit,creditAccount)))
+                                                                                                                            .switchIfEmpty(Mono.empty());
+                                                                                                                }).switchIfEmpty(Mono.empty());
+                                                                                                    }).switchIfEmpty(Mono.empty());
+                                                                                }).switchIfEmpty(Mono.empty());
+                                                                    }).switchIfEmpty(Mono.empty());
+                                                }).switchIfEmpty(Mono.empty());
+                                    }).switchIfEmpty(Mono.empty());
+                }).switchIfEmpty(Mono.empty());
+    }
+
+
+    /**
+     * Un cliente puede asociar la tarjeta de débito a todas las cuentas bancarias que posea.
+     * @param card
+     * @param codeClient
+     * @param accountNumber
+     * @return
+     */
+    @Override
+    public Mono<BankAccount> editCard(Card card, String codeClient, String accountNumber){
+        return WebClient.create(Constants.PATH_SERVICE_BANKACCOUNT)
+                .put().uri(Constants.PATH_SERVICE_BANKACCOUNT_URI.concat(Constants.PATH_CLIENT).concat("/").concat(codeClient).concat("/").concat(accountNumber))
+                .body(Mono.just(card), Card.class)
+                .retrieve()
+                .bodyToMono(BankAccount.class)
+                .transformDeferred(it -> {
+                    ReactiveCircuitBreaker rcb = circuitBreakerFactory.create("services");
+                    return rcb.run(it, throwable -> Mono.empty());
+                });
+
+    }
+
+    @Override
+    public Flux<Transaction> reportTransactionLimit(String codeClient,Integer typeAccount,String numberCard){
+        return WebClient.create(Constants.PATH_SERVICE_TRANSACTION)
+                .get().uri(Constants.PATH_SERVICE_TRANSACTION_URI.concat("/report/").concat(codeClient).concat("/").concat(typeAccount.toString()).concat("/").concat(numberCard))
+                .retrieve().bodyToFlux(Transaction.class)
+                .transformDeferred(it -> {
+                    ReactiveCircuitBreaker rcb = circuitBreakerFactory.create("services");
+                    return rcb.run(it, throwable -> Flux.empty());
+                });
+    }
+
+
+
 }
